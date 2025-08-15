@@ -46,6 +46,13 @@ This project combines state-of-the-art computer vision with modern web technolog
    ```
 
 3. **Download Model Files** (⚠️ **Important**):
+
+https://drive.google.com/drive/folders/1Ygys5wLLflHrQt4rax-BrbUNplC67kO7?usp=sharing
+this is the google drive in which all the models and the whole project has been stored as a zip file so in case if facing issues with 
+repo the whole project can be downloaded from here as a zip file 
+
+this is the link to whole project zip file :- https://drive.google.com/file/d/1b3pYHGSL_7A6MpWjls6xBh9rmcsCeCzd/view?usp=sharing
+
    Due to GitHub's file size limitations, you need to download the pre-trained model files:
    - Download OwlViT model files from [Hugging Face](https://huggingface.co/google/owlvit-base-patch32)
    - Place the following files in the project root:
