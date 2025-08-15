@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIMS Project - Sarthak's Laboratory</title>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: 
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%),
+                radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.05) 0%, transparent 70%);
+            color: #ffffff;
+            overflow-x: hidden;
+            overflow-y: auto;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Parallax Container */
+        .parallax-container {
+            height: 300vh; /* 3x viewport height for scrolling */
+            position: relative;
+        }
+
+        /* Main landing section */
+        .landing-section {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Additional content sections */
+        .content-section {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(2px);
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .section-content {
+            text-align: center;
+            max-width: 800px;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #0096ff, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.1em;
+        }
+
+        .section-text {
+            font-size: 1.2rem;
+            color: #b3d9ff;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        /* Three.js Canvas Styles */
+        #threejs-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.8;
+        }
+
+        #threejs-interactive {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+            backdrop-filter: blur(1px);
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 20px;
+            padding: 3rem;
+            border: 1px solid rgba(0, 150, 255, 0.1);
+            transform: translateZ(0); /* Enable hardware acceleration */
+        }
+
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 2rem;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.3),
+                0 0 60px rgba(0, 150, 255, 0.1);
+            animation: gentlePulse 4s ease-in-out infinite;
+            position: relative;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        @keyframes gentlePulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 30px rgba(0, 150, 255, 0.3),
+                    0 0 60px rgba(0, 150, 255, 0.1);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 40px rgba(0, 150, 255, 0.4),
+                    0 0 80px rgba(0, 150, 255, 0.2);
+            }
+        }
+
+        .project-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #0096ff, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+            position: relative;
+            letter-spacing: 0.1em;
+        }
+
+        .project-title::before {
+            content: 'AIMS PROJECT';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #ff0000, #00ff00, #0000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glitchShift 0.1s ease-in-out infinite;
+            opacity: 0.7;
+        }
+
+        @keyframes loadProgress {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+
+        @keyframes glitchShift {
+            0%, 100% { transform: translate(0); opacity: 0; }
+            10% { transform: translate(-2px, 0); opacity: 0.3; }
+            20% { transform: translate(2px, 0); opacity: 0.3; }
+            30% { transform: translate(0, -2px); opacity: 0.3; }
+            40% { transform: translate(0, 2px); opacity: 0.3; }
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b3d9ff;
+            margin-bottom: 3rem;
+            text-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+            animation: fadeInUp 1s ease-out 0.5s forwards;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+            position: relative;
+            opacity: 0;
+        }
+
+        .subtitle::after {
+            content: '|';
+            animation: blink 1s infinite;
+            color: #00ffff;
+        }
+
+        @keyframes buttonAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .loading-container {
+            margin: 3rem 0;
+            position: relative;
+        }
+
+        .loading-text {
+            font-size: 1.8rem;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ff00);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            animation: fadeIn 1s ease-out 1s forwards, holographicText 3s ease-in-out infinite;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            opacity: 0;
+        }
+
+        .loading-bar {
+            width: 400px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            margin: 0 auto 2rem;
+            overflow: hidden;
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.1);
+            position: relative;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.5s forwards;
+        }
+
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #0096ff, #00c8ff);
+            border-radius: 5px;
+            width: 0%;
+            animation: loadProgress 5s ease-out 2s forwards;
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.4);
+        }
+
+        .loading-bar::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #00ffff, #ff00ff, #00ff00, #ffff00);
+            border-radius: 12px;
+            z-index: -1;
+            animation: borderGlow 2s ease-in-out infinite;
+        }
+
+
+
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .enter-button {
+            background: linear-gradient(135deg, #0096ff, #00c8ff);
+            border: 2px solid rgba(0, 150, 255, 0.3);
+            padding: 16px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #ffffff;
+            border-radius: 30px;
+            cursor: pointer;
+            font-family: 'Segoe UI', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 
+                0 0 20px rgba(0, 150, 255, 0.3),
+                0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            opacity: 0;
+            transform: scale(0.8);
+            animation: buttonAppear 0.8s ease-out 7s forwards;
+            position: relative;
+        }
+
+        .enter-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: buttonScan 2s linear infinite;
+        }
+
+        @keyframes buttonScan {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .enter-button:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.5),
+                0 6px 20px rgba(0, 0, 0, 0.3);
+            border-color: rgba(0, 150, 255, 0.6);
+            background: linear-gradient(135deg, #00c8ff, #0096ff);
+        }
+
+        .enter-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ff00ff;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: float 8s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.7;
+            }
+            90% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        /* Hexagonal grid background */
+        .hex-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+            z-index: 0;
+            background-image: 
+                radial-gradient(circle at 25% 25%, #ff00ff 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, #9900ff 2px, transparent 2px);
+            background-size: 100px 100px;
+            animation: hexMove 20s linear infinite;
+        }
+
+        @keyframes hexMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(100px, 100px); }
+        }
+
+        /* Glitch effect */
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch1 2s infinite;
+            color: #ff00ff;
+            z-index: -1;
+        }
+
+        .glitch::after {
+            animation: glitch2 2s infinite;
+            color: #00ffff;
+            z-index: -2;
+        }
+
+        @keyframes glitch1 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch2 {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(2px, -2px); }
+            40% { transform: translate(2px, 2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(-2px, 2px); }
+        }
+
+        @media (max-width: 768px) {
+            .project-title {
+                font-size: 2.5rem;
+            }
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            .loading-bar {
+                width: 300px;
+            }
+            .loading-text {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js Canvas Elements -->
+    <canvas id="threejs-canvas"></canvas>
+    <canvas id="threejs-interactive"></canvas>
+    
+    <div class="hex-grid"></div>
+    <div class="particles" id="particles"></div>
+    
+    <div class="parallax-container">
+        <!-- Main Landing Section -->
+        <section class="landing-section">
+            <div class="container">
+        <div class="logo-container">
+            <div class="logo">
+                <img src="aims_logo.svg" alt="AIMS DTU Logo">
+            </div>
+        </div>
+        <h1 class="project-title glitch" data-text="AIMS PROJECT">AIMS PROJECT</h1>
+        <p class="subtitle">Advanced Intelligent Monitoring System</p>
+        
+        <div class="loading-container">
+            <div class="loading-text" id="loadingText">Initializing Sarthak's Laboratory...</div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+        </div>
+        
+        <button class="enter-button" id="enterButton" onclick="enterLaboratory()">Enter Sarthak's Laboratory</button>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section class="content-section">
+            <div class="section-content">
+                <h2 class="section-title">Advanced AI Vision</h2>
+                <p class="section-text">
+                    Experience cutting-edge object detection powered by state-of-the-art machine learning models. 
+                    This advanced vision system leverages OwlViT architecture with real-time processing capabilities 
+                    to deliver unprecedented accuracy in visual recognition tasks.
+                </p>
+                <p class="section-text">
+                    From autonomous vehicles to medical imaging, security systems to industrial automation - 
+                    modern computer vision opens up endless possibilities for intelligent visual analysis across diverse domains.
+                </p>
+            </div>
+        </section>
+
+        <!-- Technology Section -->
+        <section class="content-section">
+            <div class="section-content">
+                <h2 class="section-title">Next-Gen Technology</h2>
+                <p class="section-text">
+                    Built on transformer architecture and trained on massive datasets, this platform represents 
+                    the future of computer vision. The tech stack includes PyTorch for deep learning, FastAPI for backend services, 
+                    and React for the frontend interface, processing images with human-like understanding.
+                </p>
+                <p class="section-text">
+                    The model architecture combines OwlViT's zero-shot detection capabilities with custom preprocessing pipelines, 
+                    delivering real-time results through WebSocket connections and RESTful APIs designed for scalable deployment.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 80;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 6) + 's';
+                
+                // Random colors between pink and violet
+                const colors = ['#ff00ff', '#ff66ff', '#cc00ff', '#9900ff', '#ff33cc'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Loading text animation
+        function animateLoadingText() {
+            const loadingText = document.getElementById('loadingText');
+            const messages = [
+                'Initializing Sarthak\'s Laboratory...',
+                'Loading AI Models...',
+                'Calibrating Detection Systems...',
+                'Preparing Neural Networks...',
+                'System Ready!'
+            ];
+            
+            let messageIndex = 0;
+            const interval = setInterval(() => {
+                if (messageIndex < messages.length) {
+                    loadingText.textContent = messages[messageIndex];
+                    messageIndex++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+
+        // Enter laboratory function
+        function enterLaboratory() {
+            // Add a cool transition effect
+            document.body.style.transition = 'all 0.8s ease-out';
+            document.body.style.transform = 'scale(1.1)';
+            document.body.style.opacity = '0';
+            
+            setTimeout(() => {
+                window.location.href = 'detection.html';
+            }, 800);
+        }
+
+        // Initialize everything when page loads
+        window.addEventListener('load', () => {
+            createParticles();
+            setTimeout(() => {
+                animateLoadingText();
+            }, 2000);
+            
+            // Initialize Three.js animations after a slight delay to ensure smooth loading
+            setTimeout(() => {
+                initThreeJSBackground();
+                initThreeJSInteractive();
+            }, 500);
+        });
+
+        // Add some interactive effects
+        document.addEventListener('mousemove', (e) => {
+            const cursor = document.createElement('div');
+            cursor.style.position = 'fixed';
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+            cursor.style.width = '6px';
+            cursor.style.height = '6px';
+            cursor.style.background = '#ff00ff';
+            cursor.style.borderRadius = '50%';
+            cursor.style.pointerEvents = 'none';
+            cursor.style.zIndex = '1000';
+            cursor.style.opacity = '0.8';
+            cursor.style.animation = 'fadeOut 1s ease-out forwards';
+            
+            document.body.appendChild(cursor);
+            
+            setTimeout(() => {
+                if (cursor.parentNode) {
+                    cursor.parentNode.removeChild(cursor);
+                }
+            }, 1000);
+        });
+
+        // Add fadeOut animation for cursor trail
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeOut {
+                0% { opacity: 0.8; transform: scale(1); }
+                100% { opacity: 0; transform: scale(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+
+    <!-- Three.js Animation Scripts -->
+    <script>
+        // Main background animation with morphing geometries and parallax
+        function initThreeJSBackground() {
+            // Create scene, camera, and renderer
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('threejs-canvas'),
+                alpha: true,
+                antialias: true
+            });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            
+            // Enhanced fog for atmospheric perspective
+            scene.fog = new THREE.FogExp2(0x0a0a0a, 0.008); // Exponential fog for more realistic depth
+            
+            // Add depth-based color grading
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            
+            // Parallax scroll tracking
+            let scrollY = 0;
+            let targetScrollY = 0;
+            
+            // Set camera position
+            camera.position.z = 50;
+            
+            // Create a group to hold all objects
+            const group = new THREE.Group();
+            scene.add(group);
+            
+            // Create multiple morphing geometries with LOD
+            const geometries = [];
+            const materials = [];
+            const meshes = [];
+            const lodObjects = [];
+            
+            // Create different types of geometries with multiple detail levels
+            const geoTypes = [
+                {
+                    high: new THREE.TorusKnotGeometry(3, 1, 100, 16),
+                    medium: new THREE.TorusKnotGeometry(3, 1, 50, 8),
+                    low: new THREE.TorusKnotGeometry(3, 1, 20, 4)
+                },
+                {
+                    high: new THREE.IcosahedronGeometry(4, 2),
+                    medium: new THREE.IcosahedronGeometry(4, 1),
+                    low: new THREE.IcosahedronGeometry(4, 0)
+                },
+                {
+                    high: new THREE.OctahedronGeometry(5, 3),
+                    medium: new THREE.OctahedronGeometry(5, 2),
+                    low: new THREE.OctahedronGeometry(5, 1)
+                },
+                {
+                    high: new THREE.TetrahedronGeometry(6, 2),
+                    medium: new THREE.TetrahedronGeometry(6, 1),
+                    low: new THREE.TetrahedronGeometry(6, 0)
+                }
+            ];
+            
+            // Create 20 random meshes with LOD and parallax layers
+            for (let i = 0; i < 20; i++) {
+                const geoIndex = Math.floor(Math.random() * geoTypes.length);
+                const geoSet = geoTypes[geoIndex];
+                
+                // Create LOD object
+                const lod = new THREE.LOD();
+                
+                // Create wireframe materials with different colors
+                const color = new THREE.Color();
+                color.setHSL(Math.random() * 0.2 + 0.5, 0.8, 0.5); // Blue to purple range
+                
+                const materialHigh = new THREE.MeshBasicMaterial({
+                    color: color,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.4 + Math.random() * 0.2
+                });
+                
+                const materialMedium = new THREE.MeshBasicMaterial({
+                    color: color,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.3 + Math.random() * 0.2
+                });
+                
+                const materialLow = new THREE.MeshBasicMaterial({
+                    color: color,
+                    wireframe: true,
+                    transparent: true,
+                    opacity: 0.2 + Math.random() * 0.2
+                });
+                
+                // Create meshes for different detail levels
+                const meshHigh = new THREE.Mesh(geoSet.high, materialHigh);
+                const meshMedium = new THREE.Mesh(geoSet.medium, materialMedium);
+                const meshLow = new THREE.Mesh(geoSet.low, materialLow);
+                
+                // Add LOD levels (distance thresholds)
+                lod.addLevel(meshHigh, 0);    // High detail: 0-30 units
+                lod.addLevel(meshMedium, 30); // Medium detail: 30-60 units
+                lod.addLevel(meshLow, 60);    // Low detail: 60+ units
+                
+                // Assign parallax layer (0=background, 1=midground, 2=foreground)
+                const parallaxLayer = Math.floor(Math.random() * 3);
+                
+                // Position based on parallax layer
+                const layerDepth = parallaxLayer === 0 ? -80 : parallaxLayer === 1 ? -40 : -20;
+                const layerSpread = parallaxLayer === 0 ? 100 : parallaxLayer === 1 ? 80 : 60;
+                
+                lod.position.x = (Math.random() - 0.5) * layerSpread;
+                lod.position.y = (Math.random() - 0.5) * layerSpread;
+                lod.position.z = layerDepth + (Math.random() - 0.5) * 20;
+                
+                // Random scale based on layer
+                const baseScale = parallaxLayer === 0 ? 0.8 : parallaxLayer === 1 ? 0.6 : 0.4;
+                const scale = baseScale + Math.random() * 0.3;
+                lod.scale.set(scale, scale, scale);
+                
+                // Random rotation
+                lod.rotation.x = Math.random() * Math.PI;
+                lod.rotation.y = Math.random() * Math.PI;
+                
+                // Store metadata
+                lod.userData = {
+                    rotationSpeed: {
+                        x: (Math.random() - 0.5) * 0.01,
+                        y: (Math.random() - 0.5) * 0.01,
+                        z: (Math.random() - 0.5) * 0.01
+                    },
+                    floatSpeed: {
+                        x: (Math.random() - 0.5) * 0.05,
+                        y: (Math.random() - 0.5) * 0.05,
+                        z: (Math.random() - 0.5) * 0.05
+                    },
+                    originalPosition: {
+                        x: lod.position.x,
+                        y: lod.position.y,
+                        z: lod.position.z
+                    },
+                    floatOffset: Math.random() * Math.PI * 2,
+                    parallaxLayer: parallaxLayer,
+                    parallaxSpeed: parallaxLayer === 0 ? 0.1 : parallaxLayer === 1 ? 0.3 : 0.5
+                };
+                
+                lodObjects.push(lod);
+                group.add(lod);
+            }
+            
+            // Add ambient light
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            
+            // Add point lights with different colors
+            const pointLight1 = new THREE.PointLight(0x00ffff, 1, 100);
+            pointLight1.position.set(10, 10, 10);
+            scene.add(pointLight1);
+            
+            const pointLight2 = new THREE.PointLight(0xff00ff, 1, 100);
+            pointLight2.position.set(-10, -10, 10);
+            scene.add(pointLight2);
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                const time = Date.now() * 0.001;
+                
+                // Update scroll-based parallax
+                targetScrollY = window.pageYOffset || document.documentElement.scrollTop;
+                scrollY += (targetScrollY - scrollY) * 0.1; // Smooth scroll interpolation
+                
+                // Calculate parallax offset
+                const parallaxOffset = scrollY * 0.5;
+                
+                // Rotate the entire group slowly with parallax influence
+                group.rotation.x += 0.001 + (scrollY * 0.00005);
+                group.rotation.y += 0.002 + (scrollY * 0.0001);
+                
+                // Animate each LOD object individually
+                lodObjects.forEach(lod => {
+                    // Update LOD based on camera distance
+                    lod.update(camera);
+                    
+                    // Apply rotation
+                    lod.rotation.x += lod.userData.rotationSpeed.x;
+                    lod.rotation.y += lod.userData.rotationSpeed.y;
+                    lod.rotation.z += lod.userData.rotationSpeed.z;
+                    
+                    // Apply floating motion
+                    const floatOffset = lod.userData.floatOffset;
+                    lod.position.x = lod.userData.originalPosition.x + Math.sin(time + floatOffset) * 2 * lod.userData.floatSpeed.x;
+                    lod.position.y = lod.userData.originalPosition.y + Math.cos(time + floatOffset) * 2 * lod.userData.floatSpeed.y;
+                    
+                    // Parallax scrolling effect based on layer
+                    const parallaxSpeed = lod.userData.parallaxSpeed;
+                    lod.position.z = lod.userData.originalPosition.z + Math.sin(time * 0.5 + floatOffset) * 2 * lod.userData.floatSpeed.z - (parallaxOffset * parallaxSpeed);
+                    
+                    // Pulsing opacity based on distance and layer
+                    const distance = camera.position.distanceTo(lod.position);
+                    const baseOpacity = lod.userData.parallaxLayer === 0 ? 0.2 : lod.userData.parallaxLayer === 1 ? 0.3 : 0.4;
+                    const opacity = baseOpacity + Math.sin(time + floatOffset) * 0.1;
+                    
+                    // Apply opacity to all LOD levels
+                    lod.children.forEach(child => {
+                        if (child.material) {
+                            child.material.opacity = Math.max(0.05, opacity * (1 - distance / 200));
+                        }
+                    });
+                });
+                
+                // Move lights in circular patterns
+                pointLight1.position.x = Math.sin(time * 0.7) * 20;
+                pointLight1.position.y = Math.cos(time * 0.5) * 20;
+                pointLight1.position.z = Math.cos(time * 0.3) * 20;
+                
+                pointLight2.position.x = Math.sin(time * 0.3) * 20;
+                pointLight2.position.y = Math.cos(time * 0.7) * 20;
+                pointLight2.position.z = Math.sin(time * 0.5) * 20;
+                
+                // Move camera slightly based on scroll for depth effect
+                camera.position.z = 50 + (scrollY * 0.02);
+                
+                renderer.render(scene, camera);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // Start animation
+            animate();
+        }
+        
+        // Interactive foreground animation with particle system
+        function initThreeJSInteractive() {
+            // Create scene, camera, and renderer
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ 
+                canvas: document.getElementById('threejs-interactive'),
+                alpha: true,
+                antialias: true 
+            });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            
+            // Set camera position
+            camera.position.z = 30;
+            
+            // Dynamic particle system with LOD
+            const maxParticleCount = 1500;
+            const minParticleCount = 500;
+            let currentParticleCount = 1000;
+            const particles = new THREE.BufferGeometry();
+            const positions = new Float32Array(maxParticleCount * 3);
+            const colors = new Float32Array(maxParticleCount * 3);
+            const sizes = new Float32Array(maxParticleCount);
+            const visibility = new Float32Array(maxParticleCount); // For distance culling
+            
+            // Create particles with random positions and colors
+            for (let i = 0; i < maxParticleCount; i++) {
+                const i3 = i * 3;
+                
+                // Position with depth layers
+                positions[i3] = (Math.random() - 0.5) * 120; // x
+                positions[i3 + 1] = (Math.random() - 0.5) * 120; // y
+                positions[i3 + 2] = (Math.random() - 0.5) * 80; // z
+                
+                // Color (blue to purple gradient with depth variation)
+                const depth = (positions[i3 + 2] + 40) / 80; // Normalize depth
+                colors[i3] = Math.random() * 0.3 * depth; // r
+                colors[i3 + 1] = Math.random() * 0.6 * depth; // g
+                colors[i3 + 2] = (Math.random() * 0.4 + 0.6) * depth; // b
+                
+                // Size based on depth
+                sizes[i] = (Math.random() * 1.5 + 0.5) * depth;
+                
+                // Initial visibility
+                visibility[i] = i < currentParticleCount ? 1.0 : 0.0;
+            }
+            
+            particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            particles.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+            particles.setAttribute('visibility', new THREE.BufferAttribute(visibility, 1));
+            
+            // Set draw range for dynamic particle count
+            particles.setDrawRange(0, currentParticleCount);
+            
+            // Enhanced particle material with distance-based opacity
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 2,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.9,
+                blending: THREE.AdditiveBlending,
+                sizeAttenuation: true, // Size decreases with distance
+                alphaTest: 0.01 // Cull very transparent particles
+            });
+            
+            // Performance monitoring
+            let frameCount = 0;
+            let lastTime = performance.now();
+            let fps = 60;
+            
+            // Create particle system
+            const particleSystem = new THREE.Points(particles, particleMaterial);
+            scene.add(particleSystem);
+            
+            // Enhanced mouse interaction variables
+            const mouse = new THREE.Vector2();
+            const mouseSpeed = new THREE.Vector2();
+            const targetCameraPosition = new THREE.Vector3(0, 0, 30);
+            const currentCameraPosition = new THREE.Vector3(0, 0, 30);
+            let lastMousePosition = new THREE.Vector2();
+            
+            // Track mouse movement with parallax camera effects
+            document.addEventListener('mousemove', (event) => {
+                // Calculate normalized device coordinates
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                // Calculate mouse speed
+                mouseSpeed.x = mouse.x - lastMousePosition.x;
+                mouseSpeed.y = mouse.y - lastMousePosition.y;
+                
+                // Mouse parallax effect on camera
+                targetCameraPosition.x = mouse.x * 5; // Subtle horizontal movement
+                targetCameraPosition.y = mouse.y * 3; // Subtle vertical movement
+                
+                // Update last position
+                lastMousePosition.x = mouse.x;
+                lastMousePosition.y = mouse.y;
+            });
+            
+            // Reset camera position when mouse leaves window
+            document.addEventListener('mouseleave', () => {
+                targetCameraPosition.x = 0;
+                targetCameraPosition.y = 0;
+            });
+            
+            // Optimized animation loop with performance monitoring
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                const currentTime = performance.now();
+                frameCount++;
+                
+                // Calculate FPS every 60 frames
+                if (frameCount % 60 === 0) {
+                    fps = 1000 / ((currentTime - lastTime) / 60);
+                    lastTime = currentTime;
+                    
+                    // Dynamic particle count based on performance
+                    if (fps < 30 && currentParticleCount > minParticleCount) {
+                        currentParticleCount = Math.max(minParticleCount, currentParticleCount - 50);
+                        particles.setDrawRange(0, currentParticleCount);
+                    } else if (fps > 50 && currentParticleCount < maxParticleCount) {
+                        currentParticleCount = Math.min(maxParticleCount, currentParticleCount + 25);
+                        particles.setDrawRange(0, currentParticleCount);
+                    }
+                }
+                
+                // Get current particle positions and visibility
+                const positions = particles.attributes.position.array;
+                const visibilityArray = particles.attributes.visibility.array;
+                
+                // Update particle positions based on time and mouse movement
+                const time = Date.now() * 0.0005;
+                
+                for (let i = 0; i < currentParticleCount; i++) {
+                    const i3 = i * 3;
+                    
+                    // Distance culling - calculate distance from camera
+                    const dx = positions[i3] - camera.position.x;
+                    const dy = positions[i3 + 1] - camera.position.y;
+                    const dz = positions[i3 + 2] - camera.position.z;
+                    const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                    
+                    // Cull particles beyond certain distance
+                    if (distance > 80) {
+                        visibilityArray[i] = 0.0;
+                        continue;
+                    } else {
+                        visibilityArray[i] = Math.max(0.1, 1.0 - distance / 80);
+                    }
+                    
+                    // Apply sine wave motion
+                    positions[i3] += Math.sin(time + i * 0.1) * 0.05;
+                    positions[i3 + 1] += Math.cos(time + i * 0.1) * 0.05;
+                    
+                    // Apply mouse influence (stronger near the center)
+                    const distanceX = Math.abs(positions[i3] / 60);
+                    const distanceY = Math.abs(positions[i3 + 1] / 60);
+                    const distanceFactor = 1 - Math.min(1, Math.sqrt(distanceX * distanceX + distanceY * distanceY));
+                    
+                    positions[i3] += mouseSpeed.x * 3 * distanceFactor;
+                    positions[i3 + 1] += mouseSpeed.y * 3 * distanceFactor;
+                    
+                    // Keep particles within bounds with smooth wrapping
+                    if (Math.abs(positions[i3]) > 60) positions[i3] *= 0.9;
+                    if (Math.abs(positions[i3 + 1]) > 60) positions[i3 + 1] *= 0.9;
+                    if (Math.abs(positions[i3 + 2]) > 40) positions[i3 + 2] *= 0.9;
+                }
+                
+                // Update particle attributes
+                particles.attributes.position.needsUpdate = true;
+                particles.attributes.visibility.needsUpdate = true;
+                
+                // Smooth camera parallax interpolation
+                currentCameraPosition.lerp(targetCameraPosition, 0.05);
+                camera.position.x = currentCameraPosition.x;
+                camera.position.y = currentCameraPosition.y;
+                
+                // Rotate particle system with scroll influence
+                const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+                particleSystem.rotation.y += 0.001 + (scrollY * 0.00001);
+                particleSystem.rotation.x += 0.0005;
+                
+                // Subtle camera rotation based on mouse position
+                camera.rotation.x = mouse.y * 0.05;
+                camera.rotation.y = mouse.x * 0.05;
+                
+                // Gradually reduce mouse speed
+                mouseSpeed.x *= 0.95;
+                mouseSpeed.y *= 0.95;
+                
+                renderer.render(scene, camera);
+            }
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+            
+            // Start animation
+            animate();
+        }
+        
+        // Note: Three.js animations are initialized in the main window.load event handler
+    </script>
+</body>
+</html>

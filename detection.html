@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIMS - Object Detection Project</title>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+            background: 
+                linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%),
+                radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.05) 0%, transparent 70%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Three.js Canvas Styles */
+        #threejs-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.3;
+        }
+
+        #threejs-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideInDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(50px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 0;
+            position: relative;
+        }
+
+        .logo-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+            transition: transform 0.3s ease;
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo-3d-container {
+            position: relative;
+            display: inline-block;
+            width: 200px;
+            height: 200px;
+        }
+
+        .logo img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .logo:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.5), 0 0 0 0 rgba(255, 0, 255, 0.7); }
+            70% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.5), 0 0 0 20px rgba(255, 0, 255, 0); }
+            100% { box-shadow: 0 0 30px rgba(255, 0, 255, 0.5), 0 0 0 0 rgba(255, 0, 255, 0); }
+        }
+
+        .title {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff, #0096ff, #ffffff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            text-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+            animation: slideInDown 1s ease-out;
+            position: relative;
+            letter-spacing: 2px;
+        }
+
+
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #b3d9ff;
+            margin-bottom: 35px;
+            text-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+            animation: slideInUp 1s ease-out 0.3s both;
+            font-weight: 700;
+            letter-spacing: 1px;
+            position: relative;
+            opacity: 0.9;
+        }
+
+
+
+        .description {
+            font-size: 1.1rem;
+            opacity: 0.7;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+            animation: fadeIn 1s ease-out 0.6s both;
+        }
+
+
+
+        .detection-section {
+            background: 
+                linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(10, 20, 40, 0.8) 100%),
+                radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.05) 0%, transparent 70%);
+            border: 2px solid rgba(0, 150, 255, 0.2);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px 0;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.1),
+                0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideInLeft 1s ease-out 0.9s both;
+            position: relative;
+        }
+
+
+
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .input-group input[type="file"],
+        .input-group input[type="text"] {
+            width: 100%;
+            padding: 15px 20px;
+            border: 2px solid rgba(0, 150, 255, 0.3);
+            border-radius: 12px;
+            background: 
+                linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(10, 20, 40, 0.7) 100%);
+            color: #ffffff;
+            font-size: 16px;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 0 15px rgba(0, 150, 255, 0.1),
+                inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: rgba(0, 150, 255, 0.6);
+            background: 
+                linear-gradient(135deg, rgba(0, 10, 20, 0.8) 0%, rgba(10, 30, 50, 0.9) 100%);
+            box-shadow: 
+                0 0 20px rgba(0, 150, 255, 0.3),
+                inset 0 0 15px rgba(0, 0, 0, 0.4);
+            transform: translateY(-1px);
+        }
+
+        .input-group input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .detect-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #0096ff, #00c8ff);
+            color: #ffffff;
+            border: 2px solid rgba(0, 150, 255, 0.3);
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Segoe UI', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+            box-shadow: 
+                0 0 20px rgba(0, 150, 255, 0.3),
+                0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+
+
+        .detect-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.5),
+                0 6px 20px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(135deg, #00c8ff, #0096ff);
+            border-color: rgba(0, 150, 255, 0.6);
+        }
+
+
+
+        .detect-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            margin-top: 30px;
+            padding: 40px;
+            background: 
+                linear-gradient(135deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 20, 40, 0.8) 100%),
+                radial-gradient(circle at 50% 50%, rgba(0, 150, 255, 0.05) 0%, transparent 70%);
+            border: 2px solid rgba(0, 150, 255, 0.2);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 
+                0 0 30px rgba(0, 150, 255, 0.1),
+                0 4px 20px rgba(0, 0, 0, 0.3);
+            animation: slideInRight 1s ease-out 1.2s both;
+            position: relative;
+            display: none;
+        }
+
+
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-image {
+            max-width: 100%;
+            border-radius: 12px;
+            margin-top: 20px;
+            border: 2px solid rgba(0, 150, 255, 0.3);
+            box-shadow: 
+                0 0 15px rgba(0, 150, 255, 0.2),
+                0 4px 10px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .result-image:hover {
+            transform: scale(1.01);
+            border-color: rgba(0, 150, 255, 0.5);
+            box-shadow: 
+                0 0 25px rgba(0, 150, 255, 0.4),
+                0 6px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .result-item {
+            background: 
+                linear-gradient(135deg, rgba(0, 0, 0, 0.6) 0%, rgba(0, 15, 30, 0.7) 100%);
+            border: 2px solid rgba(0, 150, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            transition: all 0.3s ease;
+            box-shadow: 
+                0 0 15px rgba(0, 150, 255, 0.1),
+                inset 0 0 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-item:hover {
+            border-color: rgba(0, 150, 255, 0.5);
+            box-shadow: 
+                0 0 25px rgba(0, 150, 255, 0.3),
+                0 4px 15px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px) scale(1.01);
+            background: 
+                linear-gradient(135deg, rgba(0, 10, 20, 0.7) 0%, rgba(0, 20, 40, 0.8) 100%);
+        }
+
+
+
+        .confidence-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 150, 255, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 12px 0;
+            box-shadow: 
+                inset 0 0 10px rgba(0, 0, 0, 0.4),
+                0 0 5px rgba(0, 150, 255, 0.1);
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+            border-radius: 8px;
+            transition: width 0.6s ease;
+            box-shadow: 0 0 10px rgba(0, 150, 255, 0.2);
+        }
+
+
+
+        .floating-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s infinite linear;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(100vh) rotate(0deg); }
+            100% { transform: translateY(-100px) rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            opacity: 0.6;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1.2rem;
+            }
+            
+            .detection-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Three.js Background Canvas -->
+    <canvas id="threejs-background"></canvas>
+    
+    <div class="floating-particles" id="particles"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="logo-container">
+                <div class="logo-3d-container">
+                    <!-- Three.js Logo Canvas -->
+                    <canvas id="threejs-logo"></canvas>
+                    <div class="logo">
+                        <img src="aims_logo.svg" alt="AIMS DTU Logo">
+                    </div>
+                </div>
+            </div>
+            <h1 class="title">AIMS</h1>
+            <h2 class="subtitle">Welcome to Sarthak's Project</h2>
+            <p class="description">
+                Advanced Intelligent Monitoring System - Cutting-edge object detection technology 
+                powered by OwlViT for real-time visual analysis and recognition.
+            </p>
+        </header>
+
+        <section class="detection-section">
+            <h3 class="section-title">Object Detection Interface</h3>
+            
+            <div class="input-group">
+                <label for="imageInput">Upload Image:</label>
+                <input type="file" id="imageInput" accept="image/*" required onchange="previewImage(this)">
+                <div id="imagePreview" style="margin-top: 15px; display: none;">
+                    <img id="previewImg" style="max-width: 100%; max-height: 300px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, 0.2);" alt="Image Preview">
+                    <p style="margin-top: 10px; opacity: 0.8; font-size: 14px;">Image uploaded successfully. Ready for detection.</p>
+                </div>
+            </div>
+            
+            <div class="input-group">
+                <label for="queryInput">Detection Query:</label>
+                <input type="text" id="queryInput" placeholder="Enter what you want to detect (e.g., 'license plate', 'person', 'car')" required>
+            </div>
+            
+            <button class="detect-btn" id="detectBtn" onclick="performDetection()">Start Detection</button>
+            
+            <div class="results-section" id="resultsSection">
+                <div class="loading" id="loadingDiv">
+                    <div class="spinner"></div>
+                    <p>Processing your request...</p>
+                </div>
+                <div id="resultContent"></div>
+            </div>
+        </section>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 AIMS Society - Sarthak's Object Detection Project</p>
+    </footer>
+
+    <script>
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Perform object detection
+        async function performDetection() {
+            const imageInput = document.getElementById('imageInput');
+            const queryInput = document.getElementById('queryInput');
+            const detectBtn = document.getElementById('detectBtn');
+            const resultsSection = document.getElementById('resultsSection');
+            const loadingDiv = document.getElementById('loadingDiv');
+            const resultContent = document.getElementById('resultContent');
+
+            if (!imageInput.files[0] || !queryInput.value.trim()) {
+                alert('Please upload an image and enter a detection query.');
+                return;
+            }
+
+            // Show loading state
+            detectBtn.disabled = true;
+            detectBtn.textContent = 'Processing...';
+            resultsSection.style.display = 'block';
+            loadingDiv.style.display = 'block';
+            resultContent.style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append('image', imageInput.files[0]);
+                formData.append('query', queryInput.value.trim());
+
+                // Call the Flask API (running on port 5000)
+                const response = await fetch('http://localhost:5000/api/detect', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Detection failed. Please ensure the Flask API server is running.');
+                }
+
+                const result = await response.json();
+                
+                // Display results
+                loadingDiv.style.display = 'none';
+                resultContent.style.display = 'block';
+                
+                if (result.success && result.detections) {
+                    let detectionsHtml = '';
+                    if (result.detections.length > 0) {
+                        detectionsHtml = '<h5>Detected Objects:</h5><ul>';
+                        result.detections.forEach((detection, index) => {
+                            detectionsHtml += `<li>${detection.query}: ${(detection.score * 100).toFixed(1)}% confidence</li>`;
+                        });
+                        detectionsHtml += '</ul>';
+                    } else {
+                        detectionsHtml = '<p style="color: #ffcc00;">No objects detected. Try adjusting your query or using a different image.</p>';
+                    }
+                    
+                    resultContent.innerHTML = `
+                        <h4>Detection Results:</h4>
+                        <p><strong>Query:</strong> ${result.query}</p>
+                        <p><strong>Detections Found:</strong> ${result.detection_count}</p>
+                        ${detectionsHtml}
+                        ${result.image_data ? `<img src="${result.image_data}" alt="Detection Result" class="result-image">` : ''}
+                    `;
+                } else {
+                    resultContent.innerHTML = `
+                        <h4>Detection Results:</h4>
+                        <p style="color: #ff6b6b;">No results returned from the API.</p>
+                    `;
+                }
+
+            } catch (error) {
+                loadingDiv.style.display = 'none';
+                resultContent.style.display = 'block';
+                resultContent.innerHTML = `
+                    <h4>Error:</h4>
+                    <p style="color: #ff6b6b;">${error.message}</p>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Note: Make sure the Flask API server is running on http://localhost:5000</p>
+                    <p style="color: #cccccc; font-size: 0.9rem;">Start the server by running: python api_server.py</p>
+                `;
+            } finally {
+                detectBtn.disabled = false;
+                detectBtn.textContent = 'Start Detection';
+            }
+        }
+
+        // Create floating particles
+        function createParticles() {
+            const particlesContainer = document.createElement('div');
+            particlesContainer.className = 'particles';
+            particlesContainer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 1;
+            `;
+            document.body.appendChild(particlesContainer);
+            
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.style.cssText = `
+                    position: absolute;
+                    width: 3px;
+                    height: 3px;
+                    border-radius: 50%;
+                    opacity: 0.6;
+                    animation: float ${Math.random() * 4 + 6}s infinite linear;
+                    left: ${Math.random() * 100}%;
+                    animation-delay: ${Math.random() * 8}s;
+                `;
+                
+                // Random colors between black, pink and violet
+                const colors = ['#ff00ff', '#cc00ff', '#9900ff', '#ffffff', '#000000'];
+                particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Add particle animation styles
+        const particleStyle = document.createElement('style');
+        particleStyle.textContent = `
+            @keyframes float {
+                0% {
+                    transform: translateY(100vh) rotate(0deg);
+                    opacity: 0;
+                }
+                10% {
+                    opacity: 0.6;
+                }
+                90% {
+                    opacity: 0.6;
+                }
+                100% {
+                    transform: translateY(-100px) rotate(360deg);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(particleStyle);
+
+        // Initialize particles when page loads
+        window.addEventListener('load', createParticles);
+
+        // Image preview function
+        function previewImage(input) {
+            const preview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // Add fade-in animation
+                    preview.style.opacity = '0';
+                    setTimeout(() => {
+                        preview.style.transition = 'opacity 0.5s ease';
+                        preview.style.opacity = '1';
+                    }, 100);
+                };
+                
+                reader.readAsDataURL(input.files[0]);
+            } else {
+                preview.style.display = 'none';
+            }
+        }
+
+        // Add enter key support for inputs
+        document.getElementById('queryInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performDetection();
+            }
+        });
+
+        // Three.js Background Animation
+        function initThreeJSBackground() {
+            const canvas = document.getElementById('threejs-background');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000000, 0);
+            
+            // Create floating geometric shapes
+            const geometries = [
+                new THREE.BoxGeometry(1, 1, 1),
+                new THREE.SphereGeometry(0.5, 32, 32),
+                new THREE.ConeGeometry(0.5, 1, 32),
+                new THREE.OctahedronGeometry(0.7)
+            ];
+            
+            const materials = [
+                new THREE.MeshBasicMaterial({ color: 0x0096ff, wireframe: true, transparent: true, opacity: 0.3 }),
+                new THREE.MeshBasicMaterial({ color: 0xff00ff, wireframe: true, transparent: true, opacity: 0.2 }),
+                new THREE.MeshBasicMaterial({ color: 0x00ffff, wireframe: true, transparent: true, opacity: 0.25 })
+            ];
+            
+            const meshes = [];
+            
+            // Create multiple floating objects
+            for (let i = 0; i < 15; i++) {
+                const geometry = geometries[Math.floor(Math.random() * geometries.length)];
+                const material = materials[Math.floor(Math.random() * materials.length)];
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.x = (Math.random() - 0.5) * 20;
+                mesh.position.y = (Math.random() - 0.5) * 20;
+                mesh.position.z = (Math.random() - 0.5) * 20;
+                
+                mesh.rotation.x = Math.random() * Math.PI;
+                mesh.rotation.y = Math.random() * Math.PI;
+                
+                scene.add(mesh);
+                meshes.push(mesh);
+            }
+            
+            camera.position.z = 10;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate and move meshes
+                meshes.forEach((mesh, index) => {
+                    mesh.rotation.x += 0.005 + index * 0.001;
+                    mesh.rotation.y += 0.005 + index * 0.001;
+                    
+                    // Floating motion
+                    mesh.position.y += Math.sin(Date.now() * 0.001 + index) * 0.01;
+                    mesh.position.x += Math.cos(Date.now() * 0.0008 + index) * 0.005;
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        // Three.js Logo Animation
+        function initThreeJSLogo() {
+            const canvas = document.getElementById('threejs-logo');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true });
+            
+            renderer.setSize(200, 200);
+            renderer.setClearColor(0x000000, 0);
+            
+            // Create a rotating torus around the logo
+            const torusGeometry = new THREE.TorusGeometry(2, 0.3, 16, 100);
+            const torusMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x0096ff, 
+                wireframe: true, 
+                transparent: true, 
+                opacity: 0.6 
+            });
+            const torus = new THREE.Mesh(torusGeometry, torusMaterial);
+            scene.add(torus);
+            
+            // Create orbiting particles
+            const particleGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+            const particleMaterial = new THREE.MeshBasicMaterial({ color: 0xff00ff, transparent: true, opacity: 0.8 });
+            const particles = [];
+            
+            for (let i = 0; i < 8; i++) {
+                const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+                particles.push(particle);
+                scene.add(particle);
+            }
+            
+            camera.position.z = 5;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                // Rotate torus
+                torus.rotation.x += 0.01;
+                torus.rotation.y += 0.02;
+                
+                // Orbit particles
+                particles.forEach((particle, index) => {
+                    const angle = (Date.now() * 0.002) + (index * Math.PI * 2 / particles.length);
+                    particle.position.x = Math.cos(angle) * 3;
+                    particle.position.y = Math.sin(angle) * 3;
+                    particle.position.z = Math.sin(angle * 2) * 0.5;
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+        }
+        
+        // Initialize Three.js when page loads
+        window.addEventListener('load', () => {
+            initThreeJSBackground();
+            initThreeJSLogo();
+        });
+    </script>
+</body>
+</html>
